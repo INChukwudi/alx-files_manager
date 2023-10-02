@@ -3,6 +3,7 @@ import indexRouter from './routes/index';
 
 const server = express();
 
+server.use(express.json());
 server.use('/', indexRouter);
 
 const port = process.env.PORT || 5000;
