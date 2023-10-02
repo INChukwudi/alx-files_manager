@@ -16,7 +16,9 @@ class FilesController {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const { name, type, parentId, isPublic, data } = req.body;
+    const {
+      name, type, parentId, isPublic, data,
+    } = req.body;
     if (!name) {
       return res.status(400).json({ error: 'Missing name' });
     }
@@ -55,19 +57,18 @@ class FilesController {
         file._id = result.insertedId;
 
         return res.status(201).json(file);
-      } else {
-        const fileData = Buffer.from(data, 'base64');
-        const fileName = uuidv4();
-        const filePath = `${process.env.FOLDER_PATH || '/tmp/files_manager'}/${fileName}`;
-
-        await fsPromises.writeFile(filePath, fileData);
-
-        file.localPath = filePath;
-        const result = await dbClient.db.collection('files').insertOne(file);
-        file._id = result.insertedId;
-
-        return res.status(201).json(file);
       }
+      const fileData = Buffer.from(data, 'base64');
+      const fileName = uuidv4();
+      const filePath = `${process.env.FOLDER_PATH || '/tmp/files_manager'}/${fileName}`;
+
+      await fsPromises.writeFile(filePath, fileData);
+
+      file.localPath = filePath;
+      const result = await dbClient.db.collection('files').insertOne(file);
+      file._id = result.insertedId;
+
+      return res.status(201).json(file);
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: 'Internal Server Error' });
@@ -76,4 +77,3 @@ class FilesController {
 }
 
 export default FilesController;
-
