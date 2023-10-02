@@ -149,6 +149,7 @@ class FilesController {
 
       await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId), userId: ObjectId(userId) }, { $set: { isPublic: true } });
 
+      file.isPublic = true;
       return res.status(200).json(file);
     } catch (error) {
       console.error(error);
@@ -176,6 +177,7 @@ class FilesController {
 
       await dbClient.db.collection('files').updateOne({ _id: ObjectId(fileId), userId: ObjectId(userId) }, { $set: { isPublic: false } });
 
+      file.isPublic = false;
       return res.status(200).json(file);
     } catch (error) {
       console.error(error);
