@@ -36,7 +36,10 @@ indexRouter.get('/files', FilesController.getIndex);
 // Publish File Route
 indexRouter.put('/files/:id/publish', FilesController.putPublish);
 
-// unpublish File Route
+// Unpublish File Route
 indexRouter.put('/files/:id/unpublish', FilesController.putUnpublish);
+
+// Get File Data Route
+indexRouter.get('/files/:id/data', FilesController.getFile);
 
 export default indexRouter;
