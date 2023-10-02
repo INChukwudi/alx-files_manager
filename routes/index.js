@@ -27,4 +27,10 @@ indexRouter.get('/users/me', UsersController.getMe);
 // File Upload Route
 indexRouter.post('/files', FilesController.postUpload);
 
+// Get User File By Id Route
+indexRouter.get('/files/:id', FilesController.getShow);
+
+// Get User Files
+indexRouter.get('/files', FilesController.getIndex);
+
 export default indexRouter;
