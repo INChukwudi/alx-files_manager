@@ -2,6 +2,7 @@ import express from 'express';
 import AppController from '../controllers/AppController';
 import UsersController from '../controllers/UsersController';
 import AuthController from '../controllers/AuthController';
+import FilesController from '../controllers/FilesController';
 
 const indexRouter = express.Router();
 
@@ -22,5 +23,8 @@ indexRouter.get('/disconnect', AuthController.getDisconnect);
 
 // User Information Route
 indexRouter.get('/users/me', UsersController.getMe);
+
+// File Upload Route
+indexRouter.post('/files', FilesController.postUpload);
 
 export default indexRouter;
