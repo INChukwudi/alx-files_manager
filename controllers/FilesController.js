@@ -1,9 +1,12 @@
 import { ObjectId } from 'mongodb';
 import fs, { promises as fsPromises } from 'fs';
 import { v4 as uuidv4 } from 'uuid';
+import Queue from 'bull';
 import mime from 'mime-types';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
+
+const fileQueue = new Queue('fileQueue');
 
 class FilesController {
   static async postUpload(req, res) {
@@ -59,6 +62,7 @@ class FilesController {
 
         return res.status(201).json(file);
       }
+
       const fileData = Buffer.from(data, 'base64');
       const fileName = uuidv4();
       const filePath = `${process.env.FOLDER_PATH || '/tmp/files_manager'}/${fileName}`;
@@ -68,6 +72,10 @@ class FilesController {
       file.localPath = filePath;
       const result = await dbClient.db.collection('files').insertOne(file);
       file._id = result.insertedId;
+
+      if (type === 'image') {
+        await fileQueue.add('generate-thumbnails', { userId, fileId: file._id });
+      }
 
       return res.status(201).json(file);
     } catch (error) {
@@ -190,6 +198,7 @@ class FilesController {
     const authToken = req.header('X-Token');
     const userId = await redisClient.get(`auth_${authToken}`);
     const fileId = req.params.id;
+    const size = req.query.size || 'original';
 
     try {
       const file = await dbClient.db.collection('files').findOne({ _id: ObjectId(fileId) });
@@ -205,15 +214,30 @@ class FilesController {
         return res.status(400).json({ error: "A folder doesn't have content" });
       }
 
-      const mimeType = mime.lookup(file.name) || 'application/octet-stream';
-
       if (!fs.existsSync(file.localPath)) {
         return res.status(404).json({ error: 'Not found' });
       }
 
-      const fileContent = fs.readFileSync(file.localPath, 'binary');
-      res.setHeader('Content-Type', mimeType);
-      return res.status(200).send(fileContent);
+      const mimeType = mime.lookup(file.name) || 'application/octet-stream';
+
+      if (size === 'original') {
+        const fileContent = fs.readFileSync(file.localPath, 'binary');
+        res.setHeader('Content-Type', mimeType);
+        return res.status(200).send(fileContent);
+      }
+
+      if (['500', '250', '100'].includes(size)) {
+        const thumbnailPath = `${file.localPath}_${size}`;
+        if (!fs.existsSync(thumbnailPath)) {
+          return res.status(404).json({ error: 'Not found' });
+        }
+
+        const thumbnailContent = fs.readFileSync(thumbnailPath, 'binary');
+        res.setHeader('Content-Type', mimeType);
+        return res.status(200).send(thumbnailContent);
+      }
+
+      return res.status(400).json({ error: 'Invalid size parameter' });
     } catch (error) {
       console.error(error);
       return res.status(500).json({ error: 'Internal Server Error' });
